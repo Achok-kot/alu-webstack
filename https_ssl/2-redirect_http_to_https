@@ -1,0 +1,31 @@
+global
+    log /dev/log local0
+    log /dev/log local1 notice
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+    maxconn 2048
+    tune.ssl.default-dh-param 2048
+
+defaults
+    log global
+    mode http
+    option httplog
+    option dontlognull
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
+
+frontend http_front
+    bind *:80
+    bind *:443 ssl crt /etc/haproxy/certs/www.achok-kot.tech.pem
+    redirect scheme https code 301 if !{ ssl_fc }
+    default_backend http_back
+
+backend http_back
+    balance roundrobin
+    server 7050-web-01 44.201.182.188:80 check
+    server 7050-web-02 54.174.109.89:80 check
